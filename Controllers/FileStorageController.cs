@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using FileStorageAPI.Services.Interefaces;
+using System.IO;
 
 namespace FileStorageAPI.Controllers
 {
@@ -42,7 +43,8 @@ namespace FileStorageAPI.Controllers
                 return NotFound();
             }
 
-            return File(stream, "application/octet-stream");
+            // Return the file as an attachment with the correct content type
+            return File(fileStream, file.ContentType, file.FileName);
         }
 
         [HttpDelete("{fileId}")]
