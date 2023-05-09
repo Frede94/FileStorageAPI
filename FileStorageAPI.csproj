@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="DatabaseFolder\" />
     <Folder Include="Models\" />
   </ItemGroup>
 

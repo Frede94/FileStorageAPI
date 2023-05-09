@@ -1,10 +1,10 @@
-﻿using FileStorageAPI.Services.Interefaces;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using FileStorageAPI.Services.Interefaces;
 
 namespace FileStorageAPI.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/file-storage")]
     public class FileStorageController : ControllerBase
     {
         private readonly IFileStorage _fileStorage;
@@ -14,57 +14,48 @@ namespace FileStorageAPI.Controllers
             _fileStorage = fileStorage;
         }
 
-        [HttpPost]
-        [Route("upload")]
-        public async Task<IActionResult> UploadFile(IFormFile file)
+        [HttpPost("upload")]
+        public async Task<IActionResult> Upload(IFormFile file, [FromQuery] string location)
         {
             if (file == null || file.Length == 0)
             {
-                return BadRequest("File is empty");
+                return BadRequest("No file was uploaded.");
             }
 
-            string fileId = await _fileStorage.UploadFileAsync(file, "uploads");
+            if (string.IsNullOrEmpty(location))
+            {
+                return BadRequest("No location was specified for the uploaded file.");
+            }
 
-            return Ok(new { FileId = fileId });
-        } 
+            var fileId = await _fileStorage.UploadFileAsync(file, location);
+
+            return Ok(new { fileId });
+        }
 
         [HttpGet("{fileId}")]
-        [Route("download")]
-        public async Task<IActionResult> DownloadFile(string fileId)
+        public async Task<IActionResult> Download(string fileId)
         {
-            try
-            {
-                Stream stream = await _fileStorage.DownloadFileAsync(fileId);
+            var stream = await _fileStorage.DownloadFileAsync(fileId);
 
-                return File(stream, "application/octet-stream");
-            }
-            catch (FileNotFoundException)
+            if (stream == null)
             {
                 return NotFound();
             }
+
+            return File(stream, "application/octet-stream");
         }
 
         [HttpDelete("{fileId}")]
-        [Route("delete")]
-        public async Task<IActionResult> DeleteFile(string fileId)
+        public async Task<IActionResult> Delete(string fileId)
         {
-            try
-            {
-                bool result = await _fileStorage.DeleteFileAsync(fileId);
+            var success = await _fileStorage.DeleteFileAsync(fileId);
 
-                if (result)
-                {
-                    return NoContent();
-                }
-                else
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError);
-                }
-            }
-            catch (FileNotFoundException)
+            if (!success)
             {
                 return NotFound();
             }
+
+            return NoContent();
         }
     }
 }
